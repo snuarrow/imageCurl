@@ -14,15 +14,19 @@ import (
 	"mime/multipart"
 	"os"
 	"strconv"
+	"time"
 )
 
+var db *sql.DB
+
 func main() {
+	db = connectDatabase()
 	initializeApi()
 }
 
 func initializeApi() {
 	router := gin.Default()
-	router.GET("/inRangess", query)
+	router.GET("/inRange", query)
 	router.GET("/id", getId)
 	router.POST("/image", imagePost)
 	router.GET("/", ping)
@@ -36,36 +40,37 @@ func ping(c *gin.Context) {
 }
 
 func shutdown(c *gin.Context) {
-	defer os.Exit(0)
 	c.String(200, "shutdown ok")
+	go func() {
+		time.Sleep(time.Second)
+		os.Exit(0)
+	}()
 }
 
-// /query?decimal_latitude=1.23&decimal_longitude=2.34&distance_km=50.2
 func query(c *gin.Context) {
 	lat := c.Query("decimal_latitude")
 	lon := c.Query("decimal_longitude")
 	dist := c.Query("distance_km")
-
 	lat64, err := strconv.ParseFloat(lat, 64)
 	handleError(err)
 	lon64, err := strconv.ParseFloat(lon, 64)
 	handleError(err)
 	dist64, err := strconv.ParseFloat(dist, 64)
-
 	harvested := harvest(lat64, lon64, dist64)
-
 	var returnVal string
 	for _, element := range harvested {
 		fmt.Println(element)
-		returnVal += element+"\n"
+		returnVal += element+","
 	}
-
-	c.String(200, returnVal)
+	if len(returnVal) > 0 {
+		returnVal = fixJson(trimLast(returnVal))
+		c.String(200, returnVal)
+	} else {
+		c.String(200, fixJson(returnVal))
+	}
 }
 
-// 60.17935277777778 ,  24.816994444444444
 func harvest(initialLatitude, initialLongitude, distance float64) []string {
-	db := connectDatabase()
 	sqlStatement := `SELECT * FROM points`
 	rows, _ := db.Query(sqlStatement)
 	defer rows.Close()
@@ -74,7 +79,8 @@ func harvest(initialLatitude, initialLongitude, distance float64) []string {
 	for rows.Next() {
 		var lat, lon float64
 		var id int
-		rows.Scan(&id, &lat, &lon)
+		err := rows.Scan(&id, &lat, &lon)
+		handleError(err)
 		if inRange(initialLatitude, initialLongitude, lat, lon, distance) {
 			ids += fmt.Sprintf("%d,", id)
 		}
@@ -82,7 +88,8 @@ func harvest(initialLatitude, initialLongitude, distance float64) []string {
 
 	exifs := make([]string, 0)
 	if len(ids) > 1 {
-		ids = ids[:(len(ids)-1)]
+		//ids = ids[:(len(ids)-1)]
+		ids = trimLast(ids)
 		sqlStatement = "SELECT exif FROM exifs WHERE id IN (" + ids + ")"
 		rows, _ := db.Query(sqlStatement)
 		defer rows.Close()
@@ -90,17 +97,24 @@ func harvest(initialLatitude, initialLongitude, distance float64) []string {
 			var exif string
 			err := rows.Scan(&exif)
 			handleError(err)
-			exifs = append(exifs, exif+"\n")
+			exifs = append(exifs, exif)
 		}
 	}
 	return exifs
 }
 
+// this is here, due json convert back and forth of open source exif library did not work
+func fixJson(returnVal string) string {
+	return "{\"exifs\":[" + returnVal + "]}"
+}
+
+func trimLast(string string) string {
+	return string[:(len(string)-1)]
+}
+
 func getId(c *gin.Context) {
-	//idAsString := c.Query("id")
 	id, err := strconv.Atoi(c.Query("id"))
 	handleError(err)
-	db := connectDatabase()
 	rows, _ := db.Query(fmt.Sprintf("SELECT exif FROM exifs WHERE id IN (%d)", id))
 	defer rows.Close()
 	var exif string
@@ -108,30 +122,44 @@ func getId(c *gin.Context) {
 		error := rows.Scan(&exif)
 		handleError(error)
 	}
-	c.String(200, exif)
+	if exif == "" {
+		c.JSON(400, gin.H{"error": "not found"})
+	} else {
+		c.String(200, exif)
+	}
 }
 
 func imagePost(c *gin.Context) {
 	file, _ , err := c.Request.FormFile("file")
-	handleError(err)
-	exifAsJson, decodedExif := decodeExif(file) // exif from here
+	if err != nil {
+		c.JSON(400, gin.H{"error": "bad request"})
+		return
+	}
+	exifAsJson, decodedExif := decodeExif(file)
 	id := saveToDatabase(decodedExif, exifAsJson)
-	c.JSON(200, gin.H{ "id": id })
+	if id == -1 {
+		c.JSON(409, gin.H{"error": "exif conflicts with existing"})
+	} else {
+		c.JSON(201, gin.H{"id": id})
+	}
 }
 
 func connectDatabase() *sql.DB {
-	//connectString := "user=postgres dbname=exifdb password=salasana12 host=0.0.0.0 sslmode=disable"
-	connectString := "host=127.0.0.1 port=10042 user=imagecurl password=salasana12 dbname=imagecurl sslmode=disable"
-	fmt.Println(connectString)
+	connectString := "host=localhost port=5432 user=imagecurl password=salasana12 dbname=imagecurl sslmode=disable"
 	db, err := sql.Open("postgres", connectString)
+	if err != nil {
+		fmt.Println("database open error", err)
+	}
 	handleError(err)
 	initDatabase(db)
 	return db
 }
 
 func initDatabase(db *sql.DB) {
-	db.Exec("CREATE TABLE IF NOT EXISTS points (id SERIAL PRIMARY KEY, lat float, lon float)")
-	db.Exec("CREATE TABLE IF NOT EXISTS exifs (id SERIAL PRIMARY KEY, exif VARCHAR NOT NULL)")
+	_, err := db.Exec("CREATE TABLE IF NOT EXISTS points (id SERIAL PRIMARY KEY, lat float, lon float)")
+	handleError(err)
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS exifs (id SERIAL PRIMARY KEY, exif VARCHAR NOT NULL)")
+	handleError(err)
 }
 
 func handleError(err error) {
@@ -141,22 +169,29 @@ func handleError(err error) {
 }
 
 func saveToDatabase(exif *exif.Exif, exifAsJson string) int {
-	//connectString := "user=postgres dbname=exifdb password=salasana12 host=0.0.0.0 sslmode=disable"
-	//db, err := sql.Open("postgres", connectString)
-	//handleError(err)
-	db := connectDatabase()
-
 	lat, lon, _ := exif.LatLong()
-	db.Exec("INSERT INTO exifs(exif) VALUES($1)", exifAsJson)
-	rows, _ := db.Query("SELECT currval(pg_get_serial_sequence('exifs', 'id'))")
+	response, err := db.Exec("INSERT INTO exifs(exif) SELECT exif FROM exifs UNION VALUES($1) EXCEPT SELECT exif FROM exifs", exifAsJson)
+	handleError(err)
+	rowsAffected, err := response.RowsAffected()
+	handleError(err)
+	if rowsAffected == 0 {
+		return -1
+	}
+	//rows, _ := db.Query("SELECT currval(pg_get_serial_sequence('exifs', 'id'))")
+	rows, _ := db.Query("SELECT id FROM exifs")
+	fmt.Println("rows", rows)
 	defer rows.Close()
-	var id int
+	var id = -1
 	for rows.Next() {
-		rows.Scan(&id)
-		fmt.Println("current id:", id)
-		_, err := db.Exec("INSERT INTO points(id, lat, lon) VALUES($1, $2, $3)", id, lat, lon)
+		err := rows.Scan(&id)
 		handleError(err)
 	}
+	if id != -1 {
+		fmt.Println("current id:", id)
+		_, err = db.Exec("INSERT INTO points(id, lat, lon) VALUES($1, $2, $3)", id, lat, lon)
+		handleError(err)
+	}
+	fmt.Println("id: ",id)
 	return id
 }
 
@@ -177,7 +212,6 @@ func inRange(
 	initialPoint := haversine.Coord{Lat: initialLatitude, Lon: initialLongitude}
 	destinationPoint := haversine.Coord{Lat: destinationLatitude, Lon: destinationLongitude}
 	_, km := haversine.Distance(initialPoint, destinationPoint)
-	//fmt.Println("Miles:",mi,"Kilometers:",km)
 	return km < distance
 }
 

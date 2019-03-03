@@ -1,6 +1,16 @@
 version: '3.1'
 services:
-  imagecurl:
+  ic:
+    image: ubuntu
     build: .
     ports:
       - "8080:8080"
+
+  db:
+    image: postgres:9.6-alpine
+    ports:
+      - '10042:5432'
+    environment:
+      POSTGRES_USER: 'imagecurl'
+      POSTGRES_PASSWORD: 'salasana12'
+      POSTGRES_DB: 'imagecurl'
