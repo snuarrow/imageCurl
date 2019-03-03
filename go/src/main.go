@@ -59,7 +59,6 @@ func query(c *gin.Context) {
 	harvested := harvest(lat64, lon64, dist64)
 	var returnVal string
 	for _, element := range harvested {
-		fmt.Println(element)
 		returnVal += element+","
 	}
 	if len(returnVal) > 0 {
@@ -179,7 +178,6 @@ func saveToDatabase(exif *exif.Exif, exifAsJson string) int {
 	}
 	//rows, _ := db.Query("SELECT currval(pg_get_serial_sequence('exifs', 'id'))")
 	rows, _ := db.Query("SELECT id FROM exifs")
-	fmt.Println("rows", rows)
 	defer rows.Close()
 	var id = -1
 	for rows.Next() {
@@ -187,11 +185,9 @@ func saveToDatabase(exif *exif.Exif, exifAsJson string) int {
 		handleError(err)
 	}
 	if id != -1 {
-		fmt.Println("current id:", id)
 		_, err = db.Exec("INSERT INTO points(id, lat, lon) VALUES($1, $2, $3)", id, lat, lon)
 		handleError(err)
 	}
-	fmt.Println("id: ",id)
 	return id
 }
 
