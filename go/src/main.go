@@ -144,7 +144,7 @@ func imagePost(c *gin.Context) {
 }
 
 func connectDatabase() *sql.DB {
-	connectString := "host=localhost port=5432 user=imagecurl password=salasana12 dbname=imagecurl sslmode=disable"
+	connectString := "host=localhost port=5432 user=imagecurl password=imagecurl dbname=imagecurl sslmode=disable"
 	db, err := sql.Open("postgres", connectString)
 	if err != nil {
 		fmt.Println("database open error", err)

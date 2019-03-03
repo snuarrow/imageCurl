@@ -4,7 +4,7 @@ postgres:
       - '5432:5432'
     environment:
       POSTGRES_USER: 'imagecurl'
-      POSTGRES_PASSWORD: 'salasana12'
+      POSTGRES_PASSWORD: 'imagecurl'
       POSTGRES_DB: 'imagecurl'
 
 # docker-compose -f docker-compose.yml up
