@@ -267,7 +267,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{baseUrl}}/inRange?decimal_latitude=60.17935277777778&decimal_longitude=24.816994444444444&distance_km=50",
+					"raw": "{{baseUrl}}/inRange?decimal_latitude=60.17935277777778&decimal_longitude=24.816994444444444&distance_km=0.00001",
 					"host": [
 						"{{baseUrl}}"
 					],
@@ -285,7 +285,7 @@
 						},
 						{
 							"key": "distance_km",
-							"value": "50"
+							"value": "0.00001"
 						}
 					]
 				}
