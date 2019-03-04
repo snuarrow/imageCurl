@@ -32,7 +32,6 @@ func shutdown(c *gin.Context) {
 }
 
 func badRequest(c *gin.Context) {
-	fmt.Println("bad request")
 	c.JSON(400, gin.H{"error": "bad request"})
 }
 
@@ -86,7 +85,7 @@ func getId(c *gin.Context) {
 func imagePost(c *gin.Context) {
 	file, _ , err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(400, gin.H{"error": "bad request"})
+		badRequest(c)
 		return
 	}
 	exifAsJson, decodedExif := decodeExif(file)
