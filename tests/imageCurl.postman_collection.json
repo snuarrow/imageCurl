@@ -1,0 +1,317 @@
+{
+	"info": {
+		"_postman_id": "19b80a8b-411e-4c4b-91da-e0255054bfa9",
+		"name": "imageCurl",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "ping",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "2e15cdbe-cb7a-4ec1-8a79-657458d3472c",
+						"exec": [
+							"pm.test(\"service is running\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{baseUrl}}",
+					"host": [
+						"{{baseUrl}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "postImage first",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "86ed5a17-a469-4628-8384-4b66a3b089f7",
+						"exec": [
+							"pm.test(\"posting image works\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.environment.set(\"currentId\", pm.response.json().id)"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": ""
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/image",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"image"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "postImage second",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "86ed5a17-a469-4628-8384-4b66a3b089f7",
+						"exec": [
+							"pm.test(\"posting image works\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.environment.set(\"currentId\", pm.response.json().id)"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": ""
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/image",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"image"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "postImage existing",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": ""
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/image",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"image"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getId",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{baseUrl}}/id/?id={{currentId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"id",
+						""
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{currentId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "inRange in range",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{baseUrl}}/inRange?decimal_latitude=60.17935277777778&decimal_longitude=24.816994444444444&distance_km=52",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"inRange"
+					],
+					"query": [
+						{
+							"key": "decimal_latitude",
+							"value": "60.17935277777778"
+						},
+						{
+							"key": "decimal_longitude",
+							"value": "24.816994444444444"
+						},
+						{
+							"key": "distance_km",
+							"value": "52"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "inRange out of range partially",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{baseUrl}}/inRange?decimal_latitude=60.17935277777778&decimal_longitude=24.816994444444444&distance_km=50",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"inRange"
+					],
+					"query": [
+						{
+							"key": "decimal_latitude",
+							"value": "60.17935277777778"
+						},
+						{
+							"key": "decimal_longitude",
+							"value": "24.816994444444444"
+						},
+						{
+							"key": "distance_km",
+							"value": "50"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "inRange out of range everything",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{baseUrl}}/inRange?decimal_latitude=60.17935277777778&decimal_longitude=24.816994444444444&distance_km=50",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"inRange"
+					],
+					"query": [
+						{
+							"key": "decimal_latitude",
+							"value": "60.17935277777778"
+						},
+						{
+							"key": "decimal_longitude",
+							"value": "24.816994444444444"
+						},
+						{
+							"key": "distance_km",
+							"value": "50"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "shutdown",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{baseUrl}}/shutdown",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"shutdown"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
