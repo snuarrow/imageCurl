@@ -3,14 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/rwcarlsen/goexif/exif"
-	"github.com/rwcarlsen/goexif/mknote"
-	"github.com/umahmood/haversine"
 	"io"
 	"log"
 	"mime/multipart"
 	"os"
 	"strconv"
+
+	"github.com/rwcarlsen/goexif/exif"
+	"github.com/rwcarlsen/goexif/mknote"
+	"github.com/umahmood/haversine"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func handleError(err error) {
@@ -45,7 +47,7 @@ func fixJson(returnVal string) string {
 }
 
 func trimLast(string string) string {
-	return string[:(len(string)-1)]
+	return string[:(len(string) - 1)]
 }
 
 func decodeExif(image multipart.File) (string, *exif.Exif) {
@@ -76,4 +78,13 @@ func saveToFilesystem(file multipart.File, filename string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func hash(inputStr string) string {
+	hash, err := bcrypt.GenerateFromPassword([]byte(inputStr), bcrypt.MinCost)
+	if err != nil {
+		log.Println(err)
+	}
+
+	return string(hash)
 }
