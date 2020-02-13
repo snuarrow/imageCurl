@@ -2,14 +2,21 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
+
+type User struct {
+	Username string `json: username`
+	Password string `json: password`
+}
 
 func initializeApi() {
 	router := gin.Default()
+	router.POST("/login", login)
 	router.GET("/inRange", query)
 	router.GET("/id", getId)
 	router.POST("/image", imagePost)
@@ -17,6 +24,15 @@ func initializeApi() {
 	router.POST("/shutdown", shutdown)
 	err := router.Run() // listen and serve on 0.0.0.0:8080
 	handleError(err)
+}
+
+func login(c *gin.Context) {
+	var loginCreds User
+	c.BindJSON(&loginCreds)
+	c.JSON(200, gin.H{
+		"user": loginCreds.Username,
+		"pass": loginCreds.Password,
+	})
 }
 
 func ping(c *gin.Context) {
@@ -55,7 +71,7 @@ func query(c *gin.Context) {
 	harvested := harvest(lat64, lon64, dist64)
 	var returnVal string
 	for _, element := range harvested {
-		returnVal += element+","
+		returnVal += element + ","
 	}
 	if len(returnVal) > 0 {
 		returnVal = fixJson(trimLast(returnVal))
@@ -83,7 +99,7 @@ func getId(c *gin.Context) {
 }
 
 func imagePost(c *gin.Context) {
-	file, _ , err := c.Request.FormFile("file")
+	file, _, err := c.Request.FormFile("file")
 	if err != nil {
 		badRequest(c)
 		return
